@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Mercado Manu - Asistente de Compras con IA</title>
+  <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#e8edf8">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -75,7 +76,7 @@
       transition: background .3s, color .3s;
     }
     
-    /* Contenedor principal con scroll elástico y respetuoso de márgenes de notch/dynamic island */
+    /* Contenedor con scroll elástico respetuoso de márgenes de Dynamic Island */
     #app-scroll {
       width: 100%;
       height: 100%;
@@ -292,13 +293,14 @@
     .hist-body { display: none; padding: 14px; }
     .hist-body.open { display: block; }
     .hist-arrow {
-      font-size: 14px;
+      font-size: 13px;
       transition: transform .3s;
       color: var(--a5);
       flex-shrink: 0;
     }
+    .hist-arrow.open { transform: rotate(180deg); }
 
-    /* Barra de navegación al ras inferior adaptada para Home Indicator de iOS y Android */
+    /* Barra de navegación inferior adaptada a Safe Area */
     .nav {
       position: fixed;
       bottom: 0;
@@ -420,7 +422,7 @@
       border-radius: 4px;
     }
     
-    /* Barra de Totales acoplada exactamente sobre la barra de navegación */
+    /* Barra de Totales */
     .foot {
       position: fixed;
       bottom: calc(56px + var(--safe-bottom));
@@ -438,7 +440,7 @@
       transition: background .3s;
     }
     
-    /* Modales y Overlays respetando área segura superior e inferior */
+    /* Modales */
     .ov {
       display: none;
       position: fixed;
@@ -489,7 +491,7 @@
     .spin { animation: spin 0.6s linear infinite; }
     @keyframes spin { 100% { transform: rotate(360deg); } }
 
-    /* Botón Flotante de Asistente de Voz con IA (Evita Dynamic Island y Barra Inferior) */
+    /* Botón Flotante de Asistente de Voz */
     .fab-voice {
       position: fixed;
       bottom: calc(128px + var(--safe-bottom));
@@ -584,7 +586,6 @@
       100% { height: 38px; }
     }
 
-    /* Notificación Toast flotante ajustada bajo la Dynamic Island */
     #voiceToast {
       display: none;
       position: fixed;
@@ -608,7 +609,6 @@
       to { transform: translate(-50%, 0); opacity: 1; }
     }
 
-    /* Recorte de enfoque de cámara para etiquetas */
     .cam-viewport {
       position: relative;
       width: 100%;
@@ -654,7 +654,6 @@
       letter-spacing: 0.5px;
     }
 
-    /* Cuadrícula de Tasas */
     .rate-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -951,7 +950,7 @@
       <div id="lista"></div>
     </div>
 
-    <!-- PESTAÑA 2: TASAS DEL DÍA, CALCULADORA E HISTORIAL -->
+    <!-- PESTAÑA 2: TASAS DEL DÍA, CALCULADORA E HISTORIAL DESPLEGABLE POR MES -->
     <div id="secTasas" class="tab">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
         <h1 style="font-size:26px;font-weight:900;background:linear-gradient(135deg,#ff6b35,#ffd23f);-webkit-background-clip:text;-webkit-text-fill-color:transparent">💱 Tasas del Día</h1>
@@ -1021,10 +1020,13 @@
         </div>
       </div>
 
-      <!-- Historial de Tasas por Fechas -->
+      <!-- Historial de Tasas Desplegable por Mes (Compacto y con Eliminación) -->
       <div class="card" style="padding:14px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <span style="font-size:11px;font-weight:900;color:var(--sub);text-transform:uppercase;letter-spacing:0.5px">📅 Historial de Tasas por Fecha</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div>
+            <span style="font-size:11px;font-weight:900;color:var(--sub);text-transform:uppercase;letter-spacing:0.5px">📅 Historial por Mes</span>
+            <p style="font-size:9px;color:var(--sub);font-weight:700;margin-top:2px">Toca un mes para ver o borrar sus fechas</p>
+          </div>
           <button onclick="saveRateSnapshotManual()" style="background:rgba(6,214,160,0.15);border:1px solid rgba(6,214,160,0.4);color:var(--a3);padding:6px 12px;border-radius:12px;font-size:10px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif">
             💾 Guardar Hoy
           </button>
@@ -1033,7 +1035,7 @@
       </div>
     </div>
 
-    <!-- PESTAÑA 3: HISTORIAL -->
+    <!-- PESTAÑA 3: HISTORIAL DE COMPRAS -->
     <div id="secHist" class="tab">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
         <h1 style="font-size:26px;font-weight:900;background:linear-gradient(135deg,#00b4d8,#06d6a0);-webkit-background-clip:text;-webkit-text-fill-color:transparent">📜 Historial</h1>
@@ -1101,12 +1103,12 @@
       }
     }, 1200);
 
-    // Botón Flotante Movible con Memoria y respeto de Dynamic Island en iPhone
+    // Botón Flotante Movible con Memoria y respeto de Dynamic Island
     (function initDraggableFab() {
       var fab = document.getElementById('fabVoice');
       var isDragging = false, hasMoved = false;
       var startX = 0, startY = 0, initialLeft = 0, initialTop = 0;
-      var minSafeTop = 76; // Evita solaparse con la Dynamic Island
+      var minSafeTop = 76;
 
       var savedPos = null;
       try { savedPos = JSON.parse(localStorage.getItem('mm_fab_pos')); } catch(e){}
@@ -1205,7 +1207,7 @@
     }
 
     // =========================================================================
-    // 💱 CONTROL DE TASAS (BCV $, BCV €, USDT), CALCULADORA E HISTORIAL
+    // 💱 CONTROL DE TASAS, CALCULADORA E HISTORIAL DESPLEGABLE POR MES
     // =========================================================================
     var ratesState = {
       usd: parseFloat(localStorage.getItem('mm_rate_usd')) || 36.50,
@@ -1266,44 +1268,150 @@
     }
 
     function recordDailyRateHistory() {
-      var todayStr = new Date().toLocaleDateString('es-VE');
+      var now = new Date();
+      var todayStr = now.toLocaleDateString('es-VE');
       var hist = gDB('rates_hist_v1');
       var idx = hist.findIndex(function(h) { return h.fecha === todayStr; });
       var entry = {
+        id: (idx !== -1 && hist[idx].id) ? hist[idx].id : Date.now(),
+        timestamp: now.getTime(),
         fecha: todayStr,
-        hora: new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' }),
+        hora: now.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' }),
         usd: ratesState.usd,
         eur: ratesState.eur,
         usdt: ratesState.usdt
       };
       if (idx !== -1) hist[idx] = entry;
       else hist.unshift(entry);
-      sDB('rates_hist_v1', hist.slice(0, 45));
+      sDB('rates_hist_v1', hist.slice(0, 365));
       renderRatesHistory();
     }
 
     function saveRateSnapshotManual() {
       recordDailyRateHistory();
-      showToast("📅 Tasas de hoy guardadas");
+      showToast("📅 Tasas guardadas");
+    }
+
+    // Funciones para agrupar y desplegar historial por mes
+    var monthNamesEs = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+    function getRateMonthKey(entry) {
+      if (entry.timestamp) {
+        var d = new Date(entry.timestamp);
+        return monthNamesEs[d.getMonth()] + " " + d.getFullYear();
+      }
+      if (entry.fecha) {
+        var parts = entry.fecha.split('/');
+        if (parts.length === 3) {
+          var m = parseInt(parts[1], 10) - 1;
+          var y = parts[2];
+          if (m >= 0 && m < 12) return monthNamesEs[m] + " " + y;
+        }
+      }
+      return "General";
+    }
+
+    function toggleRateMonth(monthSlug) {
+      var body = document.getElementById('rmb-' + monthSlug);
+      var arrow = document.getElementById('rma-' + monthSlug);
+      if (!body) return;
+      var isOpen = body.classList.contains('open');
+      body.classList.toggle('open', !isOpen);
+      if (arrow) arrow.classList.toggle('open', !isOpen);
+    }
+
+    function deleteRateEntry(id, fecha) {
+      sa('¿BORRAR DÍA?', '¿Deseas eliminar las tasas del ' + fecha + '?', function() {
+        var hist = gDB('rates_hist_v1').filter(function(x) { return x.id !== id; });
+        sDB('rates_hist_v1', hist);
+        renderRatesHistory();
+        showToast('🗑️ Registro del ' + fecha + ' eliminado');
+      });
+    }
+
+    function deleteRateMonth(monthKey) {
+      sa('¿BORRAR TODO EL MES?', 'Se eliminarán todas las tasas guardadas de ' + monthKey + '.', function() {
+        var hist = gDB('rates_hist_v1').filter(function(x) {
+          return getRateMonthKey(x) !== monthKey;
+        });
+        sDB('rates_hist_v1', hist);
+        renderRatesHistory();
+        showToast('🗑️ Mes ' + monthKey + ' eliminado');
+      });
     }
 
     function renderRatesHistory() {
       var box = document.getElementById('listaTasasHist');
       if (!box) return;
       var hist = gDB('rates_hist_v1');
+
       if (!hist.length) {
-        box.innerHTML = '<p style="font-size:12px;color:var(--sub);text-align:center;padding:16px;font-weight:700">El historial de tasas se registrará aquí automáticamente.</p>';
+        box.innerHTML = '<p style="font-size:12px;color:var(--sub);text-align:center;padding:16px;font-weight:700">El historial de tasas se registrará aquí agrupado por mes.</p>';
         return;
       }
-      box.innerHTML = hist.map(function(h) {
-        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 8px;border-bottom:1px solid var(--border);font-size:11px">' +
-          '<div><b style="color:var(--text);font-size:12px">🗓️ ' + h.fecha + '</b><br><span style="font-size:9px;color:var(--sub);font-weight:800">' + (h.hora || '') + '</span></div>' +
-          '<div style="display:flex;gap:5px;text-align:right">' +
-          '<span class="badge badge-o">$ ' + fm(h.usd) + '</span>' +
-          '<span class="badge" style="background:rgba(255,210,63,0.15);color:var(--a2);border:1px solid rgba(255,210,63,0.3)">€ ' + fm(h.eur) + '</span>' +
-          '<span class="badge badge-g">₮ ' + fm(h.usdt) + '</span>' +
-          '</div></div>';
-      }).join('');
+
+      // Asegurar que cada entrada tenga ID único
+      var needsSave = false;
+      hist.forEach(function(h, idx) {
+        if (!h.id) {
+          h.id = Date.now() - (idx * 1000);
+          needsSave = true;
+        }
+      });
+      if (needsSave) sDB('rates_hist_v1', hist);
+
+      // Agrupar entradas por Mes y Año
+      var groups = {};
+      var groupOrder = [];
+      hist.forEach(function(entry) {
+        var mKey = getRateMonthKey(entry);
+        if (!groups[mKey]) {
+          groups[mKey] = [];
+          groupOrder.push(mKey);
+        }
+        groups[mKey].push(entry);
+      });
+
+      var html = '';
+      groupOrder.forEach(function(mKey, gIdx) {
+        var entries = groups[mKey];
+        var slug = mKey.replace(/\s+/g, '_');
+        var isFirst = (gIdx === 0); // El mes más reciente inicia desplegado
+
+        var rowsHtml = entries.map(function(h) {
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 4px;border-bottom:1px solid var(--border);font-size:11px">' +
+            '<div style="min-width:0;flex:1">' +
+            '<b style="color:var(--text);font-size:12px">🗓️ ' + h.fecha + '</b>' +
+            '<span style="font-size:9px;color:var(--sub);font-weight:800;margin-left:6px">' + (h.hora || '') + '</span>' +
+            '</div>' +
+            '<div style="display:flex;align-items:center;gap:4px">' +
+            '<span class="badge badge-o">$ ' + fm(h.usd) + '</span>' +
+            '<span class="badge" style="background:rgba(255,210,63,0.15);color:var(--a2);border:1px solid rgba(255,210,63,0.3)">€ ' + fm(h.eur) + '</span>' +
+            '<span class="badge badge-g">₮ ' + fm(h.usdt) + '</span>' +
+            '<button onclick="deleteRateEntry(' + h.id + ', \'' + h.fecha + '\')" title="Borrar este día" style="background:rgba(255,60,60,0.12);border:1px solid rgba(255,60,60,0.25);color:#ff3b30;border-radius:6px;width:24px;height:24px;font-size:11px;font-weight:900;cursor:pointer;margin-left:4px;display:inline-flex;align-items:center;justify-content:center">✕</button>' +
+            '</div>' +
+            '</div>';
+        }).join('');
+
+        html += '<div class="hist-item" style="margin-bottom:8px;border-radius:16px;">' +
+          '<div class="hist-head" onclick="toggleRateMonth(\'' + slug + '\')" style="padding:10px 14px;">' +
+          '<div style="display:flex;align-items:center;gap:8px">' +
+          '<span style="font-size:16px">📅</span>' +
+          '<span style="font-size:13px;font-weight:900;color:var(--text)">' + mKey + '</span>' +
+          '<span class="badge badge-o" style="font-size:9px;padding:2px 6px;">' + entries.length + ' ' + (entries.length === 1 ? 'día' : 'días') + '</span>' +
+          '</div>' +
+          '<div style="display:flex;align-items:center;gap:10px">' +
+          '<button onclick="event.stopPropagation(); deleteRateMonth(\'' + mKey.replace(/'/g, "\\'") + '\')" title="Borrar todo el mes" style="background:rgba(255,60,60,0.15);border:1px solid rgba(255,60,60,0.3);color:#ff3b30;border-radius:8px;padding:4px 8px;font-size:10px;font-weight:900;cursor:pointer">🗑️ Mes</button>' +
+          '<span id="rma-' + slug + '" class="hist-arrow ' + (isFirst ? 'open' : '') + '">▼</span>' +
+          '</div>' +
+          '</div>' +
+          '<div id="rmb-' + slug + '" class="hist-body ' + (isFirst ? 'open' : '') + '" style="padding:4px 12px 10px;">' +
+          rowsHtml +
+          '</div>' +
+          '</div>';
+      });
+
+      box.innerHTML = html;
     }
 
     function syncAllRates(notify) {
@@ -2191,7 +2299,6 @@
       s = s.replace(/\b(\d+)\s+(?:con|coma|punto)\s+(\d{1,2})\b/g, '$1.$2');
       s = s.replace(/\b(\d+)\s+y\s+medio\b/g, '$1.50');
 
-      // 1. Detectar y remover Supermercado
       var detectedStore = "";
       for (var official in STORE_ALIASES) {
         var aliases = STORE_ALIASES[official];
@@ -2219,7 +2326,6 @@
 
       var finalLoc = detectedStore || document.getElementById('loc').value.toUpperCase().trim() || 'GENERAL';
 
-      // 2. Detectar Moneda y Precio con Umbral en 99
       var hasBsWord = /\b(bs|b\s+s|bolivares|bolivar|bolos|bolo|soberanos)\b/i.test(s);
       var hasUsdWord = /\b(dolares|dolar|divisas|divisa|verdes|usd)\b|\$/i.test(s);
 
@@ -2242,14 +2348,12 @@
         if (qCand > 0 && qCand <= 25) qty = qCand;
       }
 
-      // Regla Inteligente: Por defecto en anaqueles venezolanos se etiqueta en USD
       var cur = 'USD';
       if (hasBsWord) {
         cur = 'BS';
       } else if (hasUsdWord) {
         cur = 'USD';
       } else {
-        // Umbral en 99 acordado: hasta 99 es USD, desde 100 es Bs
         if (priceVal > 99) {
           cur = 'BS';
         } else {
@@ -2260,7 +2364,6 @@
       var uUSD = cur === 'USD' ? priceVal : (priceVal / currentRate);
       var uBS = cur === 'BS' ? priceVal : (priceVal * currentRate);
 
-      // 3. Extraer Nombre del Producto
       var prodText = cleanForProd.replace(/\d+(?:\.\d+)?/g, ' ')
                                  .replace(/\b(kilos|kilo|paquetes|paquete|litros|litro|latas|lata|bolsas|bolsa|unidades|unidad)\b/gi, ' ')
                                  .replace(/[^a-zñ\s]/gi, ' ')
@@ -2527,7 +2630,6 @@
       var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       var d = imgData.data;
       
-      // Realce de contraste en escala de grises para eliminar sombras de fluorescentes
       for (var i = 0; i < d.length; i += 4) {
         var gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
         var contrast = (gray - 128) * 1.5 + 128;
@@ -2548,7 +2650,6 @@
 
       var fullUpper = lines.join(' ').toUpperCase();
 
-      // Extracción de Precio con anclajes venezolanos (REF, $, USD, BS)
       var detectedUsd = 0, detectedBs = 0;
 
       var mRef = fullUpper.match(/(?:REF\.?|\$|USD|P\.?M\.?V\.?P\.?)\s*:?\s*\$?\s*(\d+[.,]\d{1,2})/i);
@@ -2565,7 +2666,6 @@
         if (valBs > 99 || valBs > detectedUsd) detectedBs = valBs;
       }
 
-      // Si no hay etiquetas explícitas REF o BS, extraer números aislados
       if (detectedUsd === 0 && detectedBs === 0) {
         var cleanNums = fullUpper
           .replace(/\b\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}\b/g, ' ')
@@ -2597,7 +2697,6 @@
         finalUsd = detectedBs / t;
       }
 
-      // Extracción del Nombre del Producto
       var detectedProd = "";
       var allCatalog = VP.concat(gDB('prods_v1'))
         .filter(function(x, i, a) { return a.indexOf(x) === i; })
@@ -2763,7 +2862,6 @@
     }, { passive: true });
 
     window.onload = function(){
-      // Recuperar carrito en curso si se recargó la pestaña
       carrito = gDB('mm_active_cart');
       var savedPresu = localStorage.getItem('mm_current_presu');
       if (savedPresu) {
